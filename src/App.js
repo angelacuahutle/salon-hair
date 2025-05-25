@@ -2,22 +2,78 @@ import React, { useState, useEffect } from 'react';
 
 function App() {
   const [showCalendly, setShowCalendly] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [calendlyLoaded, setCalendlyLoaded] = useState(false);
   
-  // Cargar script de Calendly
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://assets.calendly.com/assets/external/widget.js';
-    script.async = true;
-    document.body.appendChild(script);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    window.addEventListener('resize', handleResize);
     
     return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  // Cargar el script de Calendly cuando se abra el modal
+  useEffect(() => {
+    if (showCalendly && !calendlyLoaded) {
+      // Verificar si el script ya existe
+      if (!document.querySelector('script[src*="calendly"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://assets.calendly.com/assets/external/widget.js';
+        script.async = true;
+        script.onload = () => {
+          setCalendlyLoaded(true);
+          console.log('Calendly script loaded');
+          // Inicializar el widget después de que se cargue el script
+          setTimeout(() => {
+            initializeCalendlyWidget();
+          }, 200);
+        };
+        document.head.appendChild(script);
+      } else {
+        setCalendlyLoaded(true);
+        // Si el script ya existe, inicializar directamente
+        setTimeout(() => {
+          initializeCalendlyWidget();
+        }, 200);
+      }
+    }
+  }, [showCalendly, calendlyLoaded]);
+
+  // Función para inicializar el widget de Calendly
+  const initializeCalendlyWidget = () => {
+    const widgetEl = document.querySelector('.calendly-inline-widget');
+    if (widgetEl && window.Calendly) {
+      console.log('Inicializando Calendly widget');
+      // Limpiar cualquier widget existente
+      widgetEl.innerHTML = '';
+      
+      if (window.Calendly.initInlineWidget) {
+        window.Calendly.initInlineWidget({
+          url: 'https://calendly.com/hibyeworld/virtual-shop-visit',
+          parentElement: widgetEl
+        });
+      }
+    } else {
+      console.log('Widget element o Calendly no disponible');
+    }
+  };
+
+  // Reinicializar cuando cambie el tamaño de ventana
+  useEffect(() => {
+    if (showCalendly && calendlyLoaded) {
+      setTimeout(() => {
+        initializeCalendlyWidget();
+      }, 300);
+    }
+  }, [windowWidth, showCalendly, calendlyLoaded]);
   
-  // Estilos en línea para evitar problemas con PostCSS
+  const isMobile = windowWidth <= 768;
+  
   const styles = {
     container: {
       height: '100vh',
@@ -26,7 +82,8 @@ function App() {
       position: 'relative',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      padding: isMobile ? '1rem' : '0'
     },
     video: {
       position: 'absolute',
@@ -50,25 +107,29 @@ function App() {
       textAlign: 'center',
       color: 'white',
       zIndex: 1,
-      position: 'relative'
+      position: 'relative',
+      width: '100%',
+      maxWidth: isMobile ? '100%' : '80%',
+      padding: isMobile ? '1rem' : '2rem'
     },
     title: {
-      fontSize: '5rem',
-      marginBottom: '2rem',
+      fontSize: isMobile ? '2.5rem' : '5rem',
+      marginBottom: isMobile ? '1.5rem' : '2rem',
       textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-      fontFamily: 'Arial, sans-serif' // Solo cambiamos la fuente del título a Arial
+      fontFamily: 'Arial, sans-serif',
+      lineHeight: 1.1
     },
     button: {
-      padding: '1rem 2.5rem',
-      fontSize: '1.2rem',
-      backgroundColor: '#d63384',
-      color: 'white',
-      border: 'none',
-      borderRadius: '50px',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-      // Mantenemos la fuente original para el botón
+    padding: isMobile ? '0.8rem 2rem' : '1rem 2.5rem',
+    fontSize: isMobile ? '1rem' : '1.4rem', // Aumentado de 1.2rem a 1.4rem para desktop
+    backgroundColor: 'rgb(64, 214, 51)', // Cambiado de '#d63384' al verde que solicitaste
+    color: 'white',
+    border: 'none',
+    borderRadius: '50px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    touchAction: 'manipulation'
     },
     modal: {
       position: 'fixed',
@@ -80,33 +141,69 @@ function App() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      padding: isMobile ? '0.5rem' : '1rem'
     },
     modalContent: {
       backgroundColor: 'white',
-      borderRadius: '10px',
-      width: '90%',
-      maxWidth: '800px',
-      height: '80%',
+      borderRadius: isMobile ? '8px' : '10px',
+      width: '100%',
+      maxWidth: isMobile ? '100%' : '900px',
+      height: isMobile ? '98%' : '85%',
       position: 'relative',
-      overflow: 'hidden'
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    modalHeader: {
+      padding: isMobile ? '0.8rem' : '1rem',
+      borderBottom: '1px solid #eee',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#f8f9fa',
+      borderRadius: isMobile ? '8px 8px 0 0' : '10px 10px 0 0'
+    },
+    modalTitle: {
+      margin: 0,
+      fontSize: isMobile ? '1.1rem' : '1.3rem',
+      color: '#333',
+      fontFamily: 'Arial, sans-serif'
     },
     closeButton: {
-      position: 'absolute',
-      top: '15px',
-      right: '15px',
-      fontSize: '24px',
+      fontSize: isMobile ? '28px' : '24px',
       backgroundColor: 'transparent',
       border: 'none',
-      color: '#333',
+      color: '#666',
       cursor: 'pointer',
-      zIndex: 1001
+      padding: '0.5rem',
+      borderRadius: '50%',
+      width: isMobile ? '44px' : '40px',
+      height: isMobile ? '44px' : '40px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'background-color 0.2s',
+      touchAction: 'manipulation'
+    },
+    calendlyContainer: {
+      flex: 1,
+      padding: isMobile ? '0.5rem' : '1rem',
+      overflow: 'hidden',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: isMobile ? '400px' : '600px'
+    },
+    loadingMessage: {
+      textAlign: 'center',
+      color: '#666',
+      fontSize: '1.1rem',
+      fontFamily: 'Arial, sans-serif'
     }
   };
   
   return (
     <div style={styles.container}>
-      {/* Video de fondo */}
       <video 
         style={styles.video}
         autoPlay 
@@ -118,12 +215,10 @@ function App() {
         Tu navegador no soporta el tag de video.
       </video>
       
-      {/* Overlay */}
       <div style={styles.overlay}></div>
       
-      {/* Contenido */}
       <div style={styles.content}>
-        <h1 style={styles.title}>Salon Hair Fashion</h1>
+        <h1 style={styles.title}>Servicio Hair Fashion</h1>
         <button 
           style={styles.button}
           onClick={() => setShowCalendly(true)}
@@ -132,21 +227,43 @@ function App() {
         </button>
       </div>
       
-      {/* Modal de Calendly */}
       {showCalendly && (
-        <div style={styles.modal}>
+        <div style={styles.modal} onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowCalendly(false);
+          }
+        }}>
           <div style={styles.modalContent}>
-            <button 
-              style={styles.closeButton}
-              onClick={() => setShowCalendly(false)}
-            >
-              ×
-            </button>
-            <div 
-              className="calendly-inline-widget"
-              data-url="https://calendly.com/tu-usuario/servicio-salon-hair"
-              style={{ minWidth: '320px', height: '100%' }}
-            ></div>
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                {isMobile ? 'Reserva tu cita' : 'Reserva tu cita - Virtual Shop Visit'}
+              </h2>
+              <button 
+                style={styles.closeButton}
+                onClick={() => setShowCalendly(false)}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+            <div style={styles.calendlyContainer}>
+              {calendlyLoaded ? (
+                <div 
+                  className="calendly-inline-widget" 
+                  data-url="https://calendly.com/hibyeworld/virtual-shop-visit"
+                  style={{ 
+                    minWidth: isMobile ? '280px' : '320px', 
+                    height: isMobile ? '500px' : '600px', 
+                    width: '100%' 
+                  }}
+                ></div>
+              ) : (
+                <div style={styles.loadingMessage}>
+                  Cargando calendario... Por favor espera un momento.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
