@@ -4,6 +4,8 @@ function App() {
   const [showCalendly, setShowCalendly] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [calendlyLoaded, setCalendlyLoaded] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   
   useEffect(() => {
     const handleResize = () => {
@@ -17,10 +19,11 @@ function App() {
     };
   }, []);
 
+
+
   // Cargar el script de Calendly cuando se abra el modal
   useEffect(() => {
     if (showCalendly && !calendlyLoaded) {
-      // Verificar si el script ya existe
       if (!document.querySelector('script[src*="calendly"]')) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
@@ -28,7 +31,6 @@ function App() {
         script.onload = () => {
           setCalendlyLoaded(true);
           console.log('Calendly script loaded');
-          // Inicializar el widget después de que se cargue el script
           setTimeout(() => {
             initializeCalendlyWidget();
           }, 200);
@@ -36,7 +38,6 @@ function App() {
         document.head.appendChild(script);
       } else {
         setCalendlyLoaded(true);
-        // Si el script ya existe, inicializar directamente
         setTimeout(() => {
           initializeCalendlyWidget();
         }, 200);
@@ -44,12 +45,10 @@ function App() {
     }
   }, [showCalendly, calendlyLoaded]);
 
-  // Función para inicializar el widget de Calendly
   const initializeCalendlyWidget = () => {
     const widgetEl = document.querySelector('.calendly-inline-widget');
     if (widgetEl && window.Calendly) {
       console.log('Inicializando Calendly widget');
-      // Limpiar cualquier widget existente
       widgetEl.innerHTML = '';
       
       if (window.Calendly.initInlineWidget) {
@@ -63,7 +62,6 @@ function App() {
     }
   };
 
-  // Reinicializar cuando cambie el tamaño de ventana
   useEffect(() => {
     if (showCalendly && calendlyLoaded) {
       setTimeout(() => {
@@ -71,6 +69,30 @@ function App() {
       }, 300);
     }
   }, [windowWidth, showCalendly, calendlyLoaded]);
+
+  // Manejar errores de video
+  const handleVideoError = (e) => {
+    console.log('Error loading video:', e);
+    setVideoError(true);
+  };
+
+  const handleVideoLoad = () => {
+    console.log('Video loaded successfully');
+    setVideoLoaded(true);
+    setVideoError(false);
+  };
+
+  const handleVideoCanPlay = () => {
+    console.log('Video can play');
+    const video = document.querySelector('video');
+    if (video) {
+      video.play().then(() => {
+        console.log('Video playing');
+      }).catch(err => {
+        console.log('Error playing video:', err);
+      });
+    }
+  };
   
   const isMobile = windowWidth <= 768;
   
@@ -83,7 +105,8 @@ function App() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: isMobile ? '1rem' : '0'
+      padding: isMobile ? '1rem' : '0',
+      backgroundColor: '#1a1a1a' // Fallback si no carga el video
     },
     video: {
       position: 'absolute',
@@ -92,7 +115,18 @@ function App() {
       width: '100%',
       height: '100%',
       objectFit: 'cover',
-      zIndex: -1
+      zIndex: 1,
+      opacity: videoLoaded && !videoError ? 1 : 0,
+      transition: 'opacity 0.5s ease'
+    },
+    fallbackBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      zIndex: -2
     },
     overlay: {
       position: 'absolute',
@@ -101,12 +135,12 @@ function App() {
       width: '100%',
       height: '100%',
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
-      zIndex: 0
+      zIndex: 2
     },
     content: {
       textAlign: 'center',
       color: 'white',
-      zIndex: 1,
+      zIndex: 3,
       position: 'relative',
       width: '100%',
       maxWidth: isMobile ? '100%' : '80%',
@@ -120,16 +154,16 @@ function App() {
       lineHeight: 1.1
     },
     button: {
-    padding: isMobile ? '0.8rem 2rem' : '1rem 2.5rem',
-    fontSize: isMobile ? '1rem' : '1.4rem', // Aumentado de 1.2rem a 1.4rem para desktop
-    backgroundColor: 'rgb(64, 214, 51)', // Cambiado de '#d63384' al verde que solicitaste
-    color: 'white',
-    border: 'none',
-    borderRadius: '50px',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    touchAction: 'manipulation'
+      padding: isMobile ? '0.8rem 2rem' : '1rem 2.5rem',
+      fontSize: isMobile ? '1rem' : '1.4rem',
+      backgroundColor: 'rgb(64, 214, 51)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50px',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      touchAction: 'manipulation'
     },
     modal: {
       position: 'fixed',
@@ -204,14 +238,24 @@ function App() {
   
   return (
     <div style={styles.container}>
+      {/* Fondo de respaldo si el video no carga */}
+      <div style={styles.fallbackBackground}></div>
+      
       <video 
         style={styles.video}
         autoPlay 
         muted 
         loop 
         playsInline
+        webkit-playsinline="true" // Para iOS Safari más viejo
+        onLoadedData={handleVideoLoad}
+        onCanPlay={handleVideoCanPlay}
+        onError={handleVideoError}
+        preload="auto" // Cambiado a auto para cargar completamente
       >
+        {/* Múltiples fuentes para mejor compatibilidad */}
         <source src="/video1.mp4" type="video/mp4" />
+        <source src="/video1.webm" type="video/webm" />
         Tu navegador no soporta el tag de video.
       </video>
       
@@ -225,6 +269,8 @@ function App() {
         >
           Appointments
         </button>
+        
+
       </div>
       
       {showCalendly && (
