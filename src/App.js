@@ -254,6 +254,7 @@ function App() {
         preload="auto" // Cambiado a auto para cargar completamente
       >
         {/* Múltiples fuentes para mejor compatibilidad */}
+        <source src="/video1-ios-compatible.mp4" type="video/mp4; codecs=avc1.42E01E,mp4a.40.2" />
         <source src="/video1.mp4" type="video/mp4" />
         <source src="/video1.webm" type="video/webm" />
         Tu navegador no soporta el tag de video.
