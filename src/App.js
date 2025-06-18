@@ -286,10 +286,10 @@ function App() {
         webkit-playsinline="true"
         onLoadedData={handleVideoLoad}
         onError={handleVideoError}
-        preload="metadata" // CAMBIADO: de "auto" a "metadata" para iOS
-        // REMOVIDO: autoPlay y onCanPlay que causaban problemas
+        preload="metadata"
       >
-        {/* Simplificado: solo MP4 para empezar */}
+        {/* Versión combinada - probará iOS-compatible primero, luego normal */}
+        <source src="/video1-ios-compatible.mp4" type="video/mp4; codecs=avc1.42E01E,mp4a.40.2" />
         <source src="/video1.mp4" type="video/mp4" />
         Tu navegador no soporta el tag de video.
       </video>
