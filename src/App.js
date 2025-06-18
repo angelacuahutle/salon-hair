@@ -294,16 +294,6 @@ function App() {
         Tu navegador no soporta el tag de video.
       </video>
       
-      {/* Botón de reproducción manual para iOS */}
-      {showPlayButton && (
-        <button 
-          onClick={handleManualPlay}
-          style={styles.playButton}
-        >
-          ▶ Reproducir Video
-        </button>
-      )}
-      
       <div style={styles.overlay}></div>
       
       <div style={styles.content}>
