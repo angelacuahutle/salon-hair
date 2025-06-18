@@ -6,6 +6,7 @@ function App() {
   const [calendlyLoaded, setCalendlyLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [showPlayButton, setShowPlayButton] = useState(false);
   
   useEffect(() => {
     const handleResize = () => {
@@ -18,8 +19,6 @@ function App() {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-
 
   // Cargar el script de Calendly cuando se abra el modal
   useEffect(() => {
@@ -70,29 +69,50 @@ function App() {
     }
   }, [windowWidth, showCalendly, calendlyLoaded]);
 
-  // Manejar errores de video
+  // Manejar errores de video - MEJORADO para debugging
   const handleVideoError = (e) => {
     console.log('Error loading video:', e);
+    console.log('Error code:', e.target.error?.code);
+    console.log('Error message:', e.target.error?.message);
     setVideoError(true);
+    setShowPlayButton(true); // Mostrar botón manual si hay error
   };
 
   const handleVideoLoad = () => {
     console.log('Video loaded successfully');
     setVideoLoaded(true);
     setVideoError(false);
+    
+    // Intentar reproducir - pero sin forzar en iOS
+    const video = document.querySelector('video');
+    if (video) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          console.log('Video playing automatically');
+          setShowPlayButton(false);
+        }).catch(error => {
+          console.log('Autoplay prevented (normal in iOS):', error);
+          setShowPlayButton(true); // Mostrar botón manual
+        });
+      }
+    }
   };
 
-  const handleVideoCanPlay = () => {
-    console.log('Video can play');
+  // Función para reproducción manual
+  const handleManualPlay = () => {
     const video = document.querySelector('video');
     if (video) {
       video.play().then(() => {
-        console.log('Video playing');
+        console.log('Manual play successful');
+        setShowPlayButton(false);
       }).catch(err => {
-        console.log('Error playing video:', err);
+        console.log('Manual play failed:', err);
       });
     }
   };
+
+  // REMOVIDO: handleVideoCanPlay - causaba problemas en iOS
   
   const isMobile = windowWidth <= 768;
   
@@ -164,6 +184,23 @@ function App() {
       transition: 'all 0.3s ease',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       touchAction: 'manipulation'
+    },
+    playButton: {
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 10,
+      padding: '1rem 2rem',
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      color: '#333',
+      border: 'none',
+      borderRadius: '50px',
+      fontSize: '1.2rem',
+      cursor: 'pointer',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      touchAction: 'manipulation',
+      fontWeight: 'bold'
     },
     modal: {
       position: 'fixed',
@@ -243,22 +280,29 @@ function App() {
       
       <video 
         style={styles.video}
-        autoPlay 
         muted 
         loop 
         playsInline
-        webkit-playsinline="true" // Para iOS Safari más viejo
+        webkit-playsinline="true"
         onLoadedData={handleVideoLoad}
-        onCanPlay={handleVideoCanPlay}
         onError={handleVideoError}
-        preload="auto" // Cambiado a auto para cargar completamente
+        preload="metadata"
       >
-        {/* Múltiples fuentes para mejor compatibilidad */}
+        {/* Versión combinada - probará iOS-compatible primero, luego normal */}
         <source src="/video1-ios-compatible.mp4" type="video/mp4; codecs=avc1.42E01E,mp4a.40.2" />
         <source src="/video1.mp4" type="video/mp4" />
-        <source src="/video1.webm" type="video/webm" />
         Tu navegador no soporta el tag de video.
       </video>
+      
+      {/* Botón de reproducción manual para iOS */}
+      {showPlayButton && (
+        <button 
+          onClick={handleManualPlay}
+          style={styles.playButton}
+        >
+          ▶ Reproducir Video
+        </button>
+      )}
       
       <div style={styles.overlay}></div>
       
@@ -270,8 +314,6 @@ function App() {
         >
           Appointments
         </button>
-        
-
       </div>
       
       {showCalendly && (
