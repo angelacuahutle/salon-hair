@@ -6,7 +6,6 @@ function App() {
   const [calendlyLoaded, setCalendlyLoaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const [showPlayButton, setShowPlayButton] = useState(false);
   
   useEffect(() => {
     const handleResize = () => {
@@ -69,13 +68,12 @@ function App() {
     }
   }, [windowWidth, showCalendly, calendlyLoaded]);
 
-  // Manejar errores de video - MEJORADO para debugging
+  // Manejar errores de video - LIMPIO sin botón
   const handleVideoError = (e) => {
     console.log('Error loading video:', e);
     console.log('Error code:', e.target.error?.code);
     console.log('Error message:', e.target.error?.message);
     setVideoError(true);
-    setShowPlayButton(true); // Mostrar botón manual si hay error
   };
 
   const handleVideoLoad = () => {
@@ -83,36 +81,19 @@ function App() {
     setVideoLoaded(true);
     setVideoError(false);
     
-    // Intentar reproducir - pero sin forzar en iOS
+    // Intentar reproducir automáticamente
     const video = document.querySelector('video');
     if (video) {
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.then(() => {
           console.log('Video playing automatically');
-          setShowPlayButton(false);
         }).catch(error => {
           console.log('Autoplay prevented (normal in iOS):', error);
-          setShowPlayButton(true); // Mostrar botón manual
         });
       }
     }
   };
-
-  // Función para reproducción manual
-  const handleManualPlay = () => {
-    const video = document.querySelector('video');
-    if (video) {
-      video.play().then(() => {
-        console.log('Manual play successful');
-        setShowPlayButton(false);
-      }).catch(err => {
-        console.log('Manual play failed:', err);
-      });
-    }
-  };
-
-  // REMOVIDO: handleVideoCanPlay - causaba problemas en iOS
   
   const isMobile = windowWidth <= 768;
   
@@ -184,23 +165,6 @@ function App() {
       transition: 'all 0.3s ease',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       touchAction: 'manipulation'
-    },
-    playButton: {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      zIndex: 10,
-      padding: '1rem 2rem',
-      backgroundColor: 'rgba(255,255,255,0.95)',
-      color: '#333',
-      border: 'none',
-      borderRadius: '50px',
-      fontSize: '1.2rem',
-      cursor: 'pointer',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      touchAction: 'manipulation',
-      fontWeight: 'bold'
     },
     modal: {
       position: 'fixed',
@@ -280,6 +244,7 @@ function App() {
       
       <video 
         style={styles.video}
+        autoPlay
         muted 
         loop 
         playsInline
